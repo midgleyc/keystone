@@ -1,5 +1,5 @@
 /** @jsx jsx  */
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { jsx } from '@keystone-ui/core';
 import { Code } from '../components/Code';
 import { H1, H2, H3, H4, H5, H6 } from '../components/Heading';
@@ -7,8 +7,10 @@ import { MDXProvider } from '@mdx-js/react';
 import cx from 'classnames';
 import Link from 'next/link';
 import { Navigation } from './Navigation';
+import { TableOfContents } from './TableOfContents';
 
-export const Page = ({ children, isProse }: { children: ReactNode; isProse?: boolean }) => {
+export const Page = ({ children, meta, isProse }: { children: ReactNode; isProse?: boolean }) => {
+  const [contentRef, setContentRef] = useState(null);
   return (
     <div className="antialiased pb-24">
       <div className="pt-4 pb-4 border-b border-gray-200">
@@ -59,8 +61,14 @@ export const Page = ({ children, isProse }: { children: ReactNode; isProse?: boo
         <aside className="flex-none w-52 mr-4 text-sm">
           <Navigation />
         </aside>
-        <div className="min-w-0 w-full flex-auto max-h-full overflow-visible">
+        <div
+          ref={setContentRef}
+          className="flex min-w-0 w-full flex-auto max-h-full overflow-visible"
+        >
           <div className={cx({ prose: isProse }, 'w-full')}>{children}</div>
+          {meta?.headings.length ? (
+            <TableOfContents container={contentRef} headings={meta?.headings} />
+          ) : null}
         </div>
       </div>
     </div>
@@ -77,8 +85,9 @@ export const components = {
   h6: H6,
 };
 
-export const Markdown = ({ children }: { children: ReactNode }) => (
-  <Page isProse>
-    <MDXProvider components={components}>{children}</MDXProvider>
-  </Page>
-);
+export const Markdown = ({ children, meta }: { children: ReactNode }) =>
+  console.log(meta) || (
+    <Page meta={meta} isProse>
+      <MDXProvider components={components}>{children}</MDXProvider>
+    </Page>
+  );
