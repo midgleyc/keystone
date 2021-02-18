@@ -1,5 +1,5 @@
 /** @jsx jsx  */
-import { ReactNode, useState } from 'react';
+import { Children, ReactNode, useState } from 'react';
 import { jsx } from '@keystone-ui/core';
 import { Code } from '../components/Code';
 import { H1, H2, H3, H4, H5, H6 } from '../components/Heading';
@@ -8,6 +8,7 @@ import cx from 'classnames';
 import Link from 'next/link';
 import { Navigation } from './Navigation';
 import { TableOfContents } from './TableOfContents';
+import slugify from '@sindresorhus/slugify';
 
 interface Meta {
   headings: Array<{
@@ -16,18 +17,30 @@ interface Meta {
     id: string;
     position: Record<string, any>;
   }>;
+  editUrl: string;
 }
 
 export const Page = ({
+  mdxContent,
   children,
-  meta,
   isProse,
 }: {
+  mdxContent?: ReactNode;
   children: ReactNode;
   isProse?: boolean;
-  meta: Meta;
 }) => {
   const [contentRef, setContentRef] = useState(null);
+  const headings = Children.toArray(mdxContent)
+    .filter((child: any) => {
+      return child.props?.mdxType && ['h2', 'h3'].includes(child.props.mdxType);
+    })
+    .map((child: any) => {
+      return {
+        id: `${slugify(child.props.children)}`,
+        depth: (child.props?.mdxType && parseInt(child.props.mdxType.replace('h', ''), 0)) ?? 0,
+        label: child.props.children,
+      };
+    });
   return (
     <div className="antialiased pb-24">
       <div className="pt-4 pb-4 border-b border-gray-200">
@@ -83,9 +96,7 @@ export const Page = ({
           className="flex min-w-0 w-full flex-auto max-h-full overflow-visible"
         >
           <div className={cx({ prose: isProse }, 'w-full')}>{children}</div>
-          {meta?.headings.length ? (
-            <TableOfContents container={contentRef} headings={meta?.headings} />
-          ) : null}
+          {headings.length ? <TableOfContents container={contentRef} headings={headings} /> : null}
         </div>
       </div>
     </div>
@@ -102,8 +113,8 @@ export const components = {
   h6: H6,
 };
 
-export const Markdown = ({ children, meta }: { children: ReactNode; meta: Meta }) => (
-  <Page meta={meta} isProse>
+export const Markdown = ({ children }: { children: ReactNode; meta: Meta }) => (
+  <Page mdxContent={children} isProse>
     <MDXProvider components={components}>{children}</MDXProvider>
   </Page>
 );
